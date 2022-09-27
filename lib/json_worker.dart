@@ -14,9 +14,9 @@ class jsonWorker {
 
     try {
       jsonFile = File(directory);
-    } catch (_e) {
+    } catch (e) {
       return {
-        "Error": _e.toString(),
+        "Error": e.toString(),
       };
     }
 
