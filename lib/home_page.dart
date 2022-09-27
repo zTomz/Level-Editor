@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,21 +8,12 @@ import 'package:level_editor/widgets/dotted_outline.dart';
 import 'package:level_editor/widgets/tile_place_bar.dart';
 import 'package:level_editor/widgets/toolbar.dart';
 
-class LevelEditor extends ConsumerStatefulWidget {
+class LevelEditor extends ConsumerWidget {
   const LevelEditor({Key? key}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
-  _LevelEditorState createState() => _LevelEditorState();
-}
-
-class _LevelEditorState extends ConsumerState<LevelEditor> {
-  double minZoomLevel = 0.1;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     Offset scrollDelta = ref.watch(scrollDeltaProvider);
-    double zoomLevel = ref.watch(zoomLevelProvider);
     Offset mousePosition = ref.watch(mousePositionProvider);
     bool editLevel = ref.watch(editLevelProvider);
     SelectedTile selectedTile = ref.watch(selectedTileProvider);

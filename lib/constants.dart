@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -11,7 +13,6 @@ const DARK_BLUE = Color(0xFF003049);
 const SELECTED_BLUE = Color(0xFF00293D);
 
 final scrollDeltaProvider = StateProvider<Offset>((ref) => const Offset(0, 0));
-final zoomLevelProvider = StateProvider<double>((ref) => 1);
 final mousePositionProvider =
     StateProvider<Offset>((ref) => const Offset(0, 0));
 final editLevelProvider = StateProvider<bool>((ref) => true);

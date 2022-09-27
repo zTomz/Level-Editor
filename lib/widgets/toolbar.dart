@@ -13,7 +13,6 @@ class LevelEditorToolbar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     bool editLevel = ref.watch(editLevelProvider);
-    List<PlacedTile> placedTiles = ref.watch(placedTilesProvider);
 
     return Positioned(
       top: 50,
