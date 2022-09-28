@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:level_editor/constants.dart';
 import 'package:level_editor/model/editing_state.dart';
 import 'package:level_editor/model/placed_tile.dart';
-import 'package:level_editor/model/selected_file.dart';
 import 'package:level_editor/model/selected_tile.dart';
 import 'package:level_editor/widgets/dotted_outline.dart';
 import 'package:level_editor/widgets/tile_place_bar.dart';

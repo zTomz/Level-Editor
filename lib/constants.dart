@@ -18,12 +18,6 @@ const SELECTED_BLUE = Color(0xFF00293D);
 final scrollDeltaProvider = StateProvider<Offset>((ref) => const Offset(0, 0));
 final mousePositionProvider =
     StateProvider<Offset>((ref) => const Offset(0, 0));
-
-/* Modes
-edit = place tiles
-explore = scroll through the level
-delete = delete items in the level
-*/
 final editingModeProvider =
     StateProvider<EditingState>((ref) => EditingState.edit);
 final placedTilesProvider = StateProvider<List<PlacedTile>>((ref) => []);
