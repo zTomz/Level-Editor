@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:level_editor/constants.dart';
 import 'package:level_editor/model/editing_state.dart';
 import 'package:level_editor/model/placed_tile.dart';
+import 'package:level_editor/model/selected_file.dart';
 import 'package:level_editor/model/selected_tile.dart';
 import 'package:level_editor/widgets/dotted_outline.dart';
 import 'package:level_editor/widgets/tile_place_bar.dart';
@@ -34,37 +35,61 @@ class LevelEditor extends ConsumerWidget {
                 ref.read(scrollDeltaProvider.notifier).state -= event.delta;
               },
               onPointerDown: (event) {
-                // Get tile position on grid layout
-                double x = (mousePosition.dx + scrollDelta.dx) -
-                    ((mousePosition.dx + scrollDelta.dx) % cellSize);
-                double y = (mousePosition.dy + scrollDelta.dy) -
-                    ((mousePosition.dy + scrollDelta.dy) % cellSize);
-
-                // Convert tile position, to simple layout
-                x = x / cellSize;
-                y = y / cellSize;
-
                 if (editingState == EditingState.edit) {
+                  List<PlacedTile> newTiles = [];
+
+                  for (int column = 0;
+                      column < selectedTile.size.width;
+                      column++) {
+                    for (int row = 0; row < selectedTile.size.height; row++) {
+                      double x = ((mousePosition.dx + (column * cellSize)) +
+                              scrollDelta.dx) -
+                          (((mousePosition.dx + (column * cellSize)) +
+                                  scrollDelta.dx) %
+                              cellSize);
+                      double y = ((mousePosition.dy + (row * cellSize)) +
+                              scrollDelta.dy) -
+                          (((mousePosition.dy + (row * cellSize)) +
+                                  scrollDelta.dy) %
+                              cellSize);
+
+                      newTiles.add(
+                        PlacedTile(
+                          position: Offset(x, y),
+                          file: selectedTile.file,
+                          flags: selectedTile.flags,
+                        ),
+                      );
+                    }
+                  }
+
+                  // Convert tile position, to simple layout
+                  List<PlacedTile> newTilesOnSimpleGrid = newTiles
+                      .map((tile) => PlacedTile(
+                          position: Offset(tile.position.dx / cellSize,
+                              tile.position.dy / cellSize),
+                          file: tile.file,
+                          flags: tile.flags))
+                      .toList();
                   if (selectedTile.file.path == "") {
                     return;
                   }
 
                   ref.read(placedTilesProvider.notifier).state = [
                     ...placedTiles,
-                    PlacedTile(
-                      position: Offset(
-                        x,
-                        y,
-                      ),
-                      file: selectedTile.file,
-                      flags: [],
-                    ),
+                    ...newTilesOnSimpleGrid
                   ];
                 }
                 if (editingState == EditingState.delete) {
+                  double x = (mousePosition.dx + scrollDelta.dx) -
+                      ((mousePosition.dx + scrollDelta.dx) % cellSize);
+                  double y = (mousePosition.dy + scrollDelta.dy) -
+                      ((mousePosition.dy + scrollDelta.dy) % cellSize);
                   // Delete the item from the placed tiles
-                  placedTiles.removeWhere(
-                    (tile) => tile.position == Offset(x, y),
+                  ref.read(placedTilesProvider.notifier).state.removeWhere(
+                    (tile) {
+                      return tile.position == Offset(x / 25, y / 25);
+                    },
                   );
                 }
               },
@@ -102,21 +127,25 @@ class LevelEditor extends ConsumerWidget {
                       lineWidth: 4,
                       spaceBetween: 7,
                       child: SizedBox(
-                        width: selectedTile.size.width * cellSize,
-                        height: selectedTile.size.height * cellSize,
+                        width: editingState == EditingState.edit
+                            ? selectedTile.size.width * cellSize
+                            : cellSize,
+                        height: editingState == EditingState.edit
+                            ? selectedTile.size.height * cellSize
+                            : cellSize,
                         child: selectedTile.file.path != "" &&
                                 editingState == EditingState.edit
                             ? Stack(
                                 children: [
-                                  for (int w = 0;
-                                      w <= selectedTile.size.width;
-                                      w++)
-                                    for (int h = 0;
-                                        h <= selectedTile.size.height;
-                                        h++)
+                                  for (int column = 0;
+                                      column <= selectedTile.size.width;
+                                      column++)
+                                    for (int row = 0;
+                                        row <= selectedTile.size.height;
+                                        row++)
                                       Positioned(
-                                        top: cellSize * h,
-                                        left: cellSize * w,
+                                        top: cellSize * row,
+                                        left: cellSize * column,
                                         child: SizedBox(
                                           width: cellSize,
                                           height: cellSize,
