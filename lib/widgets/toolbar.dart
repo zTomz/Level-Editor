@@ -1,21 +1,21 @@
-import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:level_editor/constants.dart';
 import 'package:level_editor/json_worker.dart';
+import 'package:level_editor/model/editing_state.dart';
 import 'package:level_editor/model/placed_tile.dart';
+import 'package:level_editor/model/selected_file.dart';
 
 class LevelEditorToolbar extends ConsumerWidget {
   const LevelEditorToolbar({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    bool editLevel = ref.watch(editLevelProvider);
+    EditingState editingState = ref.watch(editingModeProvider);
 
     return Positioned(
-      top: 50,
+      top: 30,
       left: 30,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
@@ -27,13 +27,41 @@ class LevelEditorToolbar extends ConsumerWidget {
           children: [
             IconButton(
               onPressed: () {
-                ref.read(editLevelProvider.notifier).state = !editLevel;
+                ref.read(editingModeProvider.notifier).state =
+                    EditingState.edit;
               },
               icon: Icon(
-                editLevel ? Icons.edit_rounded : Icons.edit_off_rounded,
+                editingState == EditingState.edit
+                    ? Icons.edit_rounded
+                    : Icons.edit_outlined,
               ),
               color: Colors.white,
             ),
+            IconButton(
+              onPressed: () {
+                ref.read(editingModeProvider.notifier).state =
+                    EditingState.delete;
+              },
+              icon: Icon(
+                editingState == EditingState.delete
+                    ? Icons.delete_rounded
+                    : Icons.delete_outline_rounded,
+              ),
+              color: Colors.white,
+            ),
+            IconButton(
+              onPressed: () {
+                ref.read(editingModeProvider.notifier).state =
+                    EditingState.explore;
+              },
+              icon: Icon(
+                editingState == EditingState.explore
+                    ? Icons.explore
+                    : Icons.explore_outlined,
+              ),
+              color: Colors.white,
+            ),
+            const SizedBox(width: 20),
             IconButton(
               onPressed: () async {
                 FilePickerResult? pickedFile =
@@ -55,7 +83,7 @@ class LevelEditorToolbar extends ConsumerWidget {
 
                 ref.read(selectedFilesProvider.notifier).state =
                     (jsonData["selectedFiles"] as List)
-                        .map((file) => File(file.toString()))
+                        .map((jsonData) => SelectedFile.fromJson(jsonData))
                         .toList();
 
                 ref.read(placedTilesProvider.notifier).state =
@@ -68,10 +96,10 @@ class LevelEditorToolbar extends ConsumerWidget {
             ),
             IconButton(
               onPressed: () async {
-                List<String> selectedFiles = ref
+                List<Map<String, dynamic>> selectedFiles = ref
                     .read(selectedFilesProvider.notifier)
                     .state
-                    .map((file) => file.path.toString())
+                    .map((selectedFile) => selectedFile.toJson())
                     .toList();
 
                 // Convert everything to json data
@@ -99,6 +127,9 @@ class LevelEditorToolbar extends ConsumerWidget {
                 if (selectedDirectory == null) {
                   debugPrint("Canceled picker");
                   return;
+                }
+                if (!selectedDirectory.endsWith(".json")) {
+                  selectedDirectory += ".json";
                 }
                 jsonWorker.saveJSON(selectedDirectory, jsonData);
               },

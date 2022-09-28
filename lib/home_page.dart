@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:level_editor/constants.dart';
+import 'package:level_editor/model/editing_state.dart';
 import 'package:level_editor/model/placed_tile.dart';
 import 'package:level_editor/model/selected_tile.dart';
 import 'package:level_editor/widgets/dotted_outline.dart';
@@ -15,7 +16,7 @@ class LevelEditor extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     Offset scrollDelta = ref.watch(scrollDeltaProvider);
     Offset mousePosition = ref.watch(mousePositionProvider);
-    bool editLevel = ref.watch(editLevelProvider);
+    EditingState editingState = ref.watch(editingModeProvider);
     SelectedTile selectedTile = ref.watch(selectedTileProvider);
     List<PlacedTile> placedTiles = ref.watch(placedTilesProvider);
     double cellSize = ref.watch(cellSizeProvider);
@@ -25,9 +26,7 @@ class LevelEditor extends ConsumerWidget {
         children: [
           MouseRegion(
             onHover: (event) {
-              if (editLevel) {
-                ref.read(mousePositionProvider.notifier).state = event.position;
-              }
+              ref.read(mousePositionProvider.notifier).state = event.position;
             },
             child: Listener(
               behavior: HitTestBehavior.opaque,
@@ -35,10 +34,6 @@ class LevelEditor extends ConsumerWidget {
                 ref.read(scrollDeltaProvider.notifier).state -= event.delta;
               },
               onPointerDown: (event) {
-                if (selectedTile.file.path == "" || !editLevel) {
-                  return;
-                }
-
                 // Get tile position on grid layout
                 double x = (mousePosition.dx + scrollDelta.dx) -
                     ((mousePosition.dx + scrollDelta.dx) % cellSize);
@@ -49,21 +44,29 @@ class LevelEditor extends ConsumerWidget {
                 x = x / cellSize;
                 y = y / cellSize;
 
-                ref.read(placedTilesProvider.notifier).state = [
-                  ...placedTiles,
-                  PlacedTile(
-                    position: Offset(
-                      x,
-                      y,
+                if (editingState == EditingState.edit) {
+                  if (selectedTile.file.path == "") {
+                    return;
+                  }
+
+                  ref.read(placedTilesProvider.notifier).state = [
+                    ...placedTiles,
+                    PlacedTile(
+                      position: Offset(
+                        x,
+                        y,
+                      ),
+                      file: selectedTile.file,
+                      flags: [],
                     ),
-                    size: Size(
-                      selectedTile.size.width,
-                      selectedTile.size.height,
-                    ),
-                    file: selectedTile.file,
-                    flags: [],
-                  ),
-                ];
+                  ];
+                }
+                if (editingState == EditingState.delete) {
+                  // Delete the item from the placed tiles
+                  placedTiles.removeWhere(
+                    (tile) => tile.position == Offset(x, y),
+                  );
+                }
               },
               onPointerSignal: (event) {
                 if (event is PointerScrollEvent) {
@@ -89,25 +92,43 @@ class LevelEditor extends ConsumerWidget {
                             ),
                           ))
                       .toList(),
-                  if (editLevel)
-                    Positioned(
-                      top: mousePosition.dy -
-                          ((mousePosition.dy + scrollDelta.dy) % cellSize),
-                      left: mousePosition.dx -
-                          ((mousePosition.dx + scrollDelta.dx) % cellSize),
-                      child: DottedOutline(
-                        strokeThickness: 3,
-                        lineWidth: 4,
-                        spaceBetween: 7,
-                        child: SizedBox(
-                          width: selectedTile.size.width * cellSize,
-                          height: selectedTile.size.height * cellSize,
-                          child: selectedTile.file.path != ""
-                              ? Image.file(selectedTile.file)
-                              : const SizedBox.shrink(),
-                        ),
+                  Positioned(
+                    top: mousePosition.dy -
+                        ((mousePosition.dy + scrollDelta.dy) % cellSize),
+                    left: mousePosition.dx -
+                        ((mousePosition.dx + scrollDelta.dx) % cellSize),
+                    child: DottedOutline(
+                      strokeThickness: 3,
+                      lineWidth: 4,
+                      spaceBetween: 7,
+                      child: SizedBox(
+                        width: selectedTile.size.width * cellSize,
+                        height: selectedTile.size.height * cellSize,
+                        child: selectedTile.file.path != "" &&
+                                editingState == EditingState.edit
+                            ? Stack(
+                                children: [
+                                  for (int w = 0;
+                                      w <= selectedTile.size.width;
+                                      w++)
+                                    for (int h = 0;
+                                        h <= selectedTile.size.height;
+                                        h++)
+                                      Positioned(
+                                        top: cellSize * h,
+                                        left: cellSize * w,
+                                        child: SizedBox(
+                                          width: cellSize,
+                                          height: cellSize,
+                                          child: Image.file(selectedTile.file),
+                                        ),
+                                      ),
+                                ],
+                              )
+                            : const SizedBox.shrink(),
                       ),
                     ),
+                  ),
                 ],
               ),
             ),

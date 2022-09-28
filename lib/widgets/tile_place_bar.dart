@@ -4,7 +4,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:level_editor/constants.dart';
+import 'package:level_editor/model/selected_file.dart';
 import 'package:level_editor/model/selected_tile.dart';
+import 'package:level_editor/widgets/edit_properties_dialog.dart';
 import 'package:level_editor/widgets/pop_up_menu_item_tile.dart';
 
 class TilePlaceBar extends ConsumerStatefulWidget {
@@ -21,13 +23,13 @@ class _TilePlaceBarState extends ConsumerState<TilePlaceBar> {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
-    List<File> selectedFiles = ref.watch(selectedFilesProvider);
+    List<SelectedFile> selectedFiles = ref.watch(selectedFilesProvider);
     SelectedTile selectedTile = ref.watch(selectedTileProvider);
 
     return Positioned(
       right: 0,
       top: active
-          ? (size.height / 2) - ((size.height - 100) / 2)
+          ? (size.height / 2) - ((size.height - 60) / 2)
           : (size.height / 2) - 30,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -63,7 +65,7 @@ class _TilePlaceBarState extends ConsumerState<TilePlaceBar> {
           if (active)
             Container(
               width: 300,
-              height: size.height - 100,
+              height: size.height - 60,
               padding: const EdgeInsets.only(top: 32, left: 32, right: 32),
               decoration: const BoxDecoration(
                 color: DARK_BLUE,
@@ -98,7 +100,13 @@ class _TilePlaceBarState extends ConsumerState<TilePlaceBar> {
                             ref.read(selectedFilesProvider.notifier).state = [
                               ...ref.read(selectedFilesProvider.notifier).state,
                               ...result.paths
-                                  .map((path) => File(path!))
+                                  .map(
+                                    (path) => SelectedFile(
+                                      file: File(path!),
+                                      size: const Size(1, 1),
+                                      flags: [],
+                                    ),
+                                  )
                                   .toList()
                             ];
                           } else {
@@ -125,10 +133,10 @@ class _TilePlaceBarState extends ConsumerState<TilePlaceBar> {
                           onTap: () {
                             ref.read(selectedTileProvider.notifier).state =
                                 SelectedTile(
-                              size: const Size(1, 1),
+                              size: selectedFiles[index].size,
                               index: index,
-                              file: selectedFiles[index],
-                              flags: [],
+                              file: selectedFiles[index].file,
+                              flags: selectedFiles[index].flags,
                             );
                           },
                           child: Container(
@@ -146,7 +154,7 @@ class _TilePlaceBarState extends ConsumerState<TilePlaceBar> {
                                   child: Padding(
                                     padding: const EdgeInsets.all(10),
                                     child: Image.file(
-                                      selectedFiles[index],
+                                      selectedFiles[index].file,
                                       fit: BoxFit.cover,
                                     ),
                                   ),
@@ -158,12 +166,24 @@ class _TilePlaceBarState extends ConsumerState<TilePlaceBar> {
                                     tooltip: "Menu",
                                     initialValue: -1,
                                     onSelected: (int selectedIndex) {
+                                      if (selectedIndex == 0) {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) =>
+                                              PropertieEditorDialog(
+                                                  index: index),
+                                        );
+                                      }
                                       if (selectedIndex == 1) {
                                         ref
-                                            .read(
-                                                selectedFilesProvider.notifier)
-                                            .state
-                                             = selectedFiles.where((file) => file != selectedFiles[index]).toList();
+                                                .read(selectedFilesProvider
+                                                    .notifier)
+                                                .state =
+                                            selectedFiles
+                                                .where((file) =>
+                                                    file !=
+                                                    selectedFiles[index])
+                                                .toList();
                                       }
                                     },
                                     icon: const Icon(
